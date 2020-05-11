@@ -2,7 +2,7 @@ a = 6 * 6
 b = a * -1
 
 def fun1(a, b):
-    a / b
+    a / b  // we don't have division.
 
 fun1(a,b)
 // Should be -1

@@ -1,8 +1,0 @@
-a = 6 * 6
-b = a * -1
-
-def fun1(a, b):
-    a / b
-
-fun1(a,b)
-// Should be -1

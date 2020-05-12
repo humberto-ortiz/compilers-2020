@@ -3,7 +3,7 @@
 let parse s =
   let lexbuf = Lexing.from_string s in
   let ast = Parser.main Lexer.token lexbuf in
-  compile_prog ast
+  Bool.compile_prog ast
 
 (* commented out so you don't have to rewrite the pretty printer, use parse instead.
 let ast_test infile =

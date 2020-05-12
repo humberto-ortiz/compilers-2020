@@ -3,4 +3,5 @@
 #load "parser.cmo";;
 #load "main.cmo";;
 open Syntax
+open Bool
 open Main

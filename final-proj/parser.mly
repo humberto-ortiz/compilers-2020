@@ -22,8 +22,16 @@ main:
 ;
 
 prog:
-| d = decl     {d}
-| e = expr     {e}
+| d_ls = decl_ls   { d_ls }    
+| e = expr     { e }
+
+dec_ls:
+| 
+    { [] }
+| d = decl
+    { [d] }
+| d = decl COMMA ds = decl_ls
+    { d :: ds }
 
 expr:
 | i = INT64 
@@ -77,13 +85,14 @@ params:
     { [] }
 | e = expr
     { [e] }
-| e = expr COMMA es = exprs
+| e = expr COMMA es = params
     { e :: es }
 ;
 
 /* def sum3(x, y, z):
   a + b + cdef sum3(x, y, z):
   a + b + c */
+
 decl: 
  | DEF id = ID LPAREN vars = params RPAREN COLON EOL e = expr
     { Func (id,vars,e) }

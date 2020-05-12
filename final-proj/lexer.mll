@@ -12,6 +12,7 @@ rule token = parse
 | '-'            { MINUS }
 | '*'            { TIMES }
 | "and"          { AND }
+| "!"            { NOT }
 | "or"           { OR }
 | '<'            { LESS }
 | "<="           { LESSEQ }
@@ -28,7 +29,6 @@ rule token = parse
 | "let"          { LET }
 | "add1"         { ADD1 }
 | "sub1"         { SUB1 }
-| "not"          { NOT }
 | "in"           { IN }
 | "def"          { DEF }
 | ':'            { COLON }

@@ -5,8 +5,7 @@ open Int64
 exception Eof
 }
 rule token = parse
-  [' ' '\t']     { token lexbuf }     (* skip blanks *)
-| ['\n' ]        { EOL }
+  [' ' '\t' '\n']     { token lexbuf }     (* skip blanks *)
 | ['0'-'9']+ as lxm { INT64(Int64.of_string lxm) }
 | '+'            { PLUS }
 | '-'            { MINUS }

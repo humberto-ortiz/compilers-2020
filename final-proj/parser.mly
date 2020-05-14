@@ -94,7 +94,7 @@ params:
   a + b + c */
 
 decl: 
- | DEF id = ID LPAREN vars = args RPAREN COLON EOL e = expr
+ | DEF id = ID LPAREN vars = args RPAREN COLON e = expr
     { Func (id,vars,e) }
 ;
 

@@ -74,6 +74,7 @@ let rec asm_to_string (asm : instruction list) : string =
   | IPop arg::tail -> "pop " ^ arg_to_string arg ^ "\n" ^ asm_to_string tail
   | IRet :: tail -> "ret\n" ^ asm_to_string tail
 
+(* This has to change to support local vars and arguments !! *)
 type env = (string * int) list
 
 let rec lookup name env =
@@ -326,12 +327,11 @@ let rec compile_expr (e : expr) (env : env) : instruction list =
        @ [IMov (Reg(RAX),Const(const_true))]
        @ [ ILabel done_label ]
 
-  (* | FuncCall (name, args) ->
-     let argsCount = List.length args in 
-     let pushed_args = List.rev_map (fun arg -> IPush (Const (arg))) args in
-     pushed_args
+  | FuncCall (name, [arg]) ->
+     compile_expr arg env
+     @ [ IPush (Reg RAX) ]
      @ [ICall name]
-     @ [IAdd((Reg RSP), Const(Int64.of_int (8*argsCount)))]  *)
+     @ [IAdd((Reg RSP), Const(Int64.of_int (8*1)))]
 
 
 let rec countVarsHelper (exp : expr) (counter : int) : int =

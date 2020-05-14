@@ -8,7 +8,7 @@
 %token DEF
 %token LPAREN RPAREN COMMA COLON
 %token ADD1 SUB1
-%token ASSING
+%token ASSIGN
 %token EOF
 %token EOL
 %nonassoc UMINUS        /* highest precedence */
@@ -22,8 +22,16 @@ main:
 ;
 
 prog:
-| d = decl     {d}
-| e = expr     {e}
+| d_ls = decl_ls e = expr  { Decls (d_ls, e)  }    
+| e = expr     { Expr e }
+
+decl_ls:
+| 
+    { [] }
+| d = decl
+    { [d] }
+| d = decl COMMA ds = decl_ls
+    { d :: ds }
 
 expr:
 | i = INT64 
@@ -57,12 +65,12 @@ expr:
 | e1 = expr NOTEQ e2 = expr
     { BinOp (e1, Ne, e2) }
 | MINUS e = expr %prec UMINUS
-    { BinOp (e, Mult, (Num (-1))) }
+    { BinOp (e, Mult, (Num (-1L))) }
 | ADD1 e = expr 
     { Add1 e }
 | SUB1 e = expr 
     { Sub1 e }
-| LET id = ID ASSING e1 = expr IN e2 = expr 
+| LET id = ID ASSIGN e1 = expr IN e2 = expr 
     { Let (id,e1,e2) }
 | IF e1 = expr COLON e2 = expr ELSE COLON e3 = expr
     { If (e1,e2,e3) }
@@ -77,14 +85,21 @@ params:
     { [] }
 | e = expr
     { [e] }
-| e = expr COMMA es = exprs
+| e = expr COMMA es = params
     { e :: es }
 ;
 
 /* def sum3(x, y, z):
   a + b + cdef sum3(x, y, z):
   a + b + c */
+
 decl: 
- | DEF id = ID LPAREN vars = params RPAREN COLON EOL e = expr
+ | DEF id = ID LPAREN vars = args RPAREN COLON EOL e = expr
     { Func (id,vars,e) }
+;
+
+args:
+ | { [] }
+ | id = ID { [id] }
+ | id = ID COMMA ars = args { id :: ars}
 ;

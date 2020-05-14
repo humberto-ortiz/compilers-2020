@@ -1,5 +1,6 @@
 open Printf
 open Int64
+open Syntax
 
 type reg = 
   | RSP

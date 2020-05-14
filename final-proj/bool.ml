@@ -325,13 +325,12 @@ let rec compile_expr (e : expr) (env : env) : instruction list =
        @ [IMov (Reg(RAX),Const(const_true))]
        @ [ ILabel done_label ]
 
-  (* What am I supposed to do with the args? Push them to the stack? *)
   (* | FuncCall (name, args) ->
      let argsCount = List.length args in 
-     let pushed_args_as_immediate = List.rev_map (fun arg -> (IPush (...))) args in
-     pushed_args_as_immediate
-     @ [Call name]
-     @ [IAdd((Reg RSP), Const(8*argsCount))] *)
+     let pushed_args = List.rev_map (fun arg -> IPush (Const (arg))) args in
+     pushed_args
+     @ [ICall name]
+     @ [IAdd((Reg RSP), Const(Int64.of_int (8*argsCount)))]  *)
 
 
 let rec countVarsHelper (exp : expr) (counter : int) : int =
@@ -373,8 +372,6 @@ let rec compile_decls (decls : decl list) (instructions : instruction list) : in
       let instructions2 = compile_decl decl in
       let combined_instructions = instructions2 @ instructions in
       compile_decls decls2 combined_instructions
-  | _ -> failwith ("compile_decls compiles decls of type prog, not anything else of type prog.")
-
 
 let compile = fun (prog : prog) : (instruction list * instruction list) ->
   match prog with

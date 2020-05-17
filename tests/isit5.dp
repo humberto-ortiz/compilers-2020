@@ -1,0 +1,9 @@
+def isit5(x):
+  if x == 5 :
+     True
+  else: 
+     False
+
+let a = 3 in
+  isit5(a)
+// should be False

@@ -1,16 +1,16 @@
 (* driver for parser *)
+open Bool
 
 let parse s =
   let lexbuf = Lexing.from_string s in
   let ast = Parser.main Lexer.token lexbuf in
-  Bool.compile_prog ast
+  ast
 
-(* commented out so you don't have to rewrite the pretty printer, use parse instead.
 let ast_test infile =
    let lexbuf = Lexing.from_channel infile in
    let loop () =
      let prog  = Parser.main Lexer.token lexbuf in
-     Pretty.print_prog prog
+     Bool.compile_prog prog
    in
    loop ()
 
@@ -20,8 +20,7 @@ let _ =
    else
       let infile = open_in Sys.argv.(1) in
          try
-            ast_test infile
+            print_endline (ast_test infile)
          with (Failure f) ->
             Printf.fprintf stderr "\nERROR: %s\n" f;
          close_in infile
-*)

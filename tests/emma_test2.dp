@@ -1,0 +1,12 @@
+def test2(x):
+  let a = 5 in
+     let b = 3 in
+        let c = x * b in
+           if (c-a) < 10:
+             3
+           else:
+             4
+
+test2(4)
+
+// should give 4

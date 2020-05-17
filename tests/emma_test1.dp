@@ -1,0 +1,15 @@
+def test1(x, y):
+   
+  let a = x * y in
+     if (a <= 50):
+       let b = a * y in
+         if (b <= 50):
+           b * y
+         else:
+           b
+      else:
+        a 
+
+test1(3, 4)
+
+// should give 192

@@ -1,0 +1,24 @@
+def test4(x, y, z):
+
+   let a = 10 in
+     if x > 10:
+       let b = 20 in
+         if y > 20:
+           let c = 30 in
+              if c > 30:
+                x + y + z
+   	      else:
+		a + b + c
+          else:
+	    x + y
+      else:
+        x
+
+
+let s = 11 in
+let t = 23 in
+let u = 31 in
+  test4(s, t, u)
+
+// should be 65
+

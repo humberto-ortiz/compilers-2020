@@ -1,0 +1,9 @@
+def test3(x, y, z):
+
+   let a = x * z in
+      let b = y * z in
+         let c = a - b in
+            c * 10
+
+test3(2, 5, 3)
+// should give -90

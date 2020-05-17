@@ -1,0 +1,9 @@
+def isitNeg(x):
+   if x < 0:
+     True
+   else: 
+     False
+
+let a = 7 in
+  isitNeg(a)
+// should give False

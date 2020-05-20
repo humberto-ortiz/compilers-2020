@@ -74,20 +74,46 @@ let rec asm_to_string (asm : instruction list) : string =
   | IPop arg::tail -> "pop " ^ arg_to_string arg ^ "\n" ^ asm_to_string tail
   | IRet :: tail -> "ret\n" ^ asm_to_string tail
 
-(* This has to change to support local vars and arguments !! *)
-type env = (string * int) list
+type env = (string * arg) list
 
-let rec lookup name env =
+let rec lookup (name : string) (env : env) : arg =
   match env with
   | [] -> failwith (sprintf "Identifier %s not found in environment" name)
-  | (n, i)::rest ->
-     if name = n then i else (lookup name rest)
-;;
+  | (n, arg)::rest ->
+     if name = n then arg else (lookup name rest)
 
-let add name env =
-  let slot = 1 + (List.length env) in
-  ((name,slot)::env, slot)
-;;
+let is_local_var (arg : arg) : bool =
+  match arg with
+  | RegOffset (reg, _) ->
+    if reg = RSP then true else false
+  | _ -> false
+
+let rec count_local_vars_in_env (env : env) : int =
+  match env with
+  | [] -> 0
+  | (_, arg)::rest -> 
+    if (is_local_var arg) then (count_local_vars_in_env rest) + 1
+    else count_local_vars_in_env rest
+
+(*
+This function would need to be modified in the future if something else other 
+than local vars and func args are added to the env. i.e, if we add another register
+other than RSP and RBP to the reg in RegOffsets in the env, then modify this function.
+*)
+let count_func_args_in_env (env : env) : int =
+    let total = List.length env in
+    let local_vars_count = count_local_vars_in_env env in
+    total - local_vars_count
+
+let add name env reg =
+  if reg = RSP then
+    let local_vars_count = 1 + (count_local_vars_in_env env) in (*The 1+ is to offset the 0 in case there are no vars in env.*)
+    let arg = RegOffset(reg, ~-1 * local_vars_count) in
+    ((name, arg)::env, arg)
+  else 
+    let args_in_env_count = 1 + (count_func_args_in_env env) in
+    let arg = RegOffset(reg, 1 * args_in_env_count) in
+    ((name, arg)::env, arg)
 
 let gensym =
   let counter = ref 0 in
@@ -213,15 +239,15 @@ let rec compile_expr (e : expr) (env : env) : instruction list =
 
   | Not e -> [IMov(Reg(RBX), Const(const_bool_mask))] @ (compile_expr e env) @ [ IXor(Reg(RAX), Reg(RBX)) ]
 
-  | Id name -> let slot = (lookup name env) in
-               [ IMov(Reg(RAX), RegOffset(RSP, ~-1 * slot) ) ]
+  | Id name -> let regOffSet = (lookup name env) in
+               [ IMov(Reg(RAX), regOffSet) ]
  
   | Let (x, e, b) ->
-     let (env', slot) = add x env in
+     let (env', regOffSet) = add x env RSP in
      (* Compile the binding, and get the result into RAX *)
      (compile_expr e env)
      (* Copy the result in RAX into the appropriate stack slot *)
-     @ [ IMov(RegOffset(RSP, ~-1 * slot), Reg(RAX)) ]
+     @ [ IMov(regOffSet, Reg(RAX)) ]
      (* Compile the body, given that x is in the correct slot when it's needed *)
      @ (compile_expr b env')
 
@@ -325,15 +351,23 @@ let rec compile_expr (e : expr) (env : env) : instruction list =
        @ [ IJump done_label ]
        @ [ ILabel ne_label ]
        @ [IMov (Reg(RAX),Const(const_true))]
-       @ [ ILabel done_label ]
+       @ [ ILabel done_label ] 
 
+  | FuncCall (name, args) ->
+     let argsCount = List.length args in
+     let compiled_args_list_of_list = List.rev_map (fun arg -> (compile_expr arg env) @ [IPush(Reg RAX)]) args in
+     let compiled_and_pushed_args = List.flatten compiled_args_list_of_list in  
+     compiled_and_pushed_args
+     @ [ICall name]
+     @ [IAdd((Reg RSP), Const(Int64.of_int (8*argsCount)))] (* Clean the stack from the args. *)
+
+(* Uncomment this and comment the FuncCall above to make test with 1 arg.
   | FuncCall (name, [arg]) ->
      compile_expr arg env
      @ [ IPush (Reg RAX) ]
      @ [ICall name]
-     @ [IAdd((Reg RSP), Const(Int64.of_int (8*1)))]
-
-
+     @ [IAdd((Reg RSP), Const(Int64.of_int (8*1)))] *)
+     
 let rec countVarsHelper (exp : expr) (counter : int) : int =
   match exp with
   | Num _ -> counter
@@ -354,16 +388,17 @@ let compile_decl (decl : decl) : instruction list =
   match decl with
   | Func (name, args, body) -> 
       let varsCount = countVars body in
-      let env = List.mapi (fun slot arg -> (arg, slot+1)) args in
+      let env = List.mapi (fun index arg -> (arg, RegOffset(RBP, index+1))) args in
       [ILabel name]
       (* Prologue *)
-      @ [IPush(Reg RBP)]
-      @ [IMov((Reg RBP), (Reg RSP))]
-      @ [ISub((Reg RSP), (Const (Int64.of_int (8*varsCount))))]
+      @ [IPush(Reg RBP)]                                        (* Save caller's stack frame address (return address). *)
+      @ [IMov((Reg RBP), (Reg RSP))]                            (* Create new stack frame. *)
+      @ [ISub((Reg RSP), (Const (Int64.of_int (8*varsCount))))] (* Allocate space in stack for local vars. *)
       (* Body *)
-      @ compile_expr body env 
-      (* Leave *)
-      @ [IMov((Reg RSP), (Reg RBP))]
+      @ compile_expr body env                                   (* Compile body of the function. *)
+      (* Epilogue *)
+      @ [IMov((Reg RSP), (Reg RBP))]                            (* Destroy the previously created stack frame. *)
+      @ [IPop(Reg RBP)]                                         (* Get caller's stack frame address (return address. *)
       @ [IRet]
 
 let rec compile_decls (decls : decl list) (instructions : instruction list) : instruction list =
@@ -386,7 +421,7 @@ let compile = fun (prog : prog) : (instruction list * instruction list) ->
 (* compile_prog surrounds a compiled program by whatever scaffolding is needed *)
 let compile_prog (prog : prog) : string =
   (* compile the program *)
-  let (decl_instrs, exp_instrs) = compile prog in (* Descomponener el tuplo y poner las funciones en .text y la expr en asm_string. *)
+  let (decl_instrs, exp_instrs) = compile prog in 
   (* convert it to a textual form *)
   let asm_exp_string = asm_to_string exp_instrs in
   let asm_decl_string = asm_to_string decl_instrs in
@@ -398,4 +433,4 @@ global our_code_starts_here
 our_code_starts_here:" in
   let suffix = "ret" in
   prelude ^ "\n" ^ asm_exp_string ^ "\n" ^ suffix
-  ;;
+;;

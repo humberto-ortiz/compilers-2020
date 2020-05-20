@@ -421,7 +421,7 @@ let compile = fun (prog : prog) : (instruction list * instruction list) ->
 (* compile_prog surrounds a compiled program by whatever scaffolding is needed *)
 let compile_prog (prog : prog) : string =
   (* compile the program *)
-  let (decl_instrs, exp_instrs) = compile prog in (* Descomponener el tuplo y poner las funciones en .text y la expr en asm_string. *)
+  let (decl_instrs, exp_instrs) = compile prog in 
   (* convert it to a textual form *)
   let asm_exp_string = asm_to_string exp_instrs in
   let asm_decl_string = asm_to_string decl_instrs in

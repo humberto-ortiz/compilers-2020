@@ -61,3 +61,28 @@ let add name env =
   ((name,slot)::env, slot)
 *)
 
+(* 
+
+      0x7FFF... (top of stack)
+      |                      |
+      |                      | <---- Stack frame belongs to the caller. 
+      |                      | <---- Arg N        ($RBP + 8*N)
+      | Caller's Stack Frame | <---- Arg N-1      ($RBP + 8*(N-1))
+      |                      | .
+      |                      | .
+      |                      | .                  
+      |                      | <---- Arg 1        ($RBP + 8*1)
+      |----------------------| <---- $RBP (Starts callee's stack frame and Ends caller's stack frame).
+      |                      | <---- Local var 1  ($RBP - 8*1)
+      |                      | <---- Local var 2  ($RBP - 8*2)
+      | Callee's Stack Frame | .
+      |                      | .
+      |                      | .
+      |                      | <---- Local var N  ($RBP - 8*N)
+      |----------------------| <---- $RSP (Ends callee's stack frame)
+      |                      |
+      |  Unallocated memory  |  Por la forma en la que compilamos los Lets, estariamos accesando direcciones aquí
+      |                      |
+      0x0000... (bot of stack)
+
+*)
